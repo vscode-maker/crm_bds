@@ -216,12 +216,40 @@ async function runPropertyAnalysis(
       return;
     }
 
+    // ── Context Window: Fetch 5 recent PROCESSED messages for richer AI analysis ──
+    const newMessageIds = messages.map((m) => m.id);
+    const contextMessages = await prisma.message.findMany({
+      where: {
+        conversationId,
+        senderUid,
+        senderType: 'contact',
+        contentType: 'text',
+        aiProcessed: true,
+        isDeleted: false,
+        id: { notIn: newMessageIds }, // Exclude current batch
+      },
+      orderBy: { sentAt: 'desc' },
+      take: 5,
+      select: {
+        content: true,
+        senderName: true,
+      },
+    });
+    // Reverse context to chronological order
+    contextMessages.reverse();
+
     // ── AI Detection (passes all 6 layers) ───────────────────────
     const result = await detectPropertyRequest(
       messages.map((m) => ({
         senderName: m.senderName || senderName,
         content: m.content || '',
       })),
+      contextMessages.length > 0
+        ? contextMessages.map((m) => ({
+            senderName: m.senderName || senderName,
+            content: m.content || '',
+          }))
+        : undefined,
     );
 
     // Mark messages as processed regardless of result
@@ -231,34 +259,77 @@ async function runPropertyAnalysis(
       data: { aiProcessed: true },
     });
 
-    // If real-estate request detected, create PropertyRequest
+    // If real-estate request detected → dedup or create
     if (result.isRealEstate) {
-      const request = await prisma.propertyRequest.create({
-        data: {
-          id: randomUUID(),
-          orgId,
+      let request;
+
+      // ── DEDUP: Check for recent PropertyRequest from same sender (30min window) ──
+      const recentRequest = await prisma.propertyRequest.findFirst({
+        where: {
           conversationId,
           senderUid,
-          senderName,
-          requestType: result.requestType,
-          propertyType: result.propertyType,
-          location: result.location,
-          area: result.area,
-          priceRange: result.priceRange,
-          contactInfo: result.contactInfo,
-          details: result.details,
-          rawMessages: messages.map((m) => ({
-            id: m.id,
-            content: m.content,
-            senderName: m.senderName,
-          })),
-          sourceMessageIds: messageIds,
+          createdAt: { gte: new Date(Date.now() - 30 * 60 * 1000) },
         },
+        orderBy: { createdAt: 'desc' },
       });
 
-      logger.info(
-        `[property-debounce] ✅ Created PropertyRequest ${request.id}: ${result.requestType} ${result.propertyType} @ ${result.location}`,
-      );
+      if (recentRequest && !result.isNewIntent) {
+        // UPDATE existing request with enriched info (merge, don't overwrite nulls)
+        request = await prisma.propertyRequest.update({
+          where: { id: recentRequest.id },
+          data: {
+            requestType: result.requestType || recentRequest.requestType,
+            propertyType: result.propertyType || recentRequest.propertyType,
+            location: result.location || recentRequest.location,
+            area: result.area || recentRequest.area,
+            priceRange: result.priceRange || recentRequest.priceRange,
+            contactInfo: result.contactInfo || recentRequest.contactInfo,
+            details: result.details || recentRequest.details,
+            rawMessages: [
+              ...((recentRequest.rawMessages as any[]) || []),
+              ...messages.map((m) => ({
+                id: m.id,
+                content: m.content,
+                senderName: m.senderName,
+              })),
+            ],
+            sourceMessageIds: [
+              ...((recentRequest.sourceMessageIds as string[]) || []),
+              ...messageIds,
+            ],
+          },
+        });
+        logger.info(
+          `[property-debounce] 🔄 Updated PropertyRequest ${request.id} with new info from ${senderName}`,
+        );
+      } else {
+        // CREATE new PropertyRequest
+        request = await prisma.propertyRequest.create({
+          data: {
+            id: randomUUID(),
+            orgId,
+            conversationId,
+            senderUid,
+            senderName,
+            requestType: result.requestType,
+            propertyType: result.propertyType,
+            location: result.location,
+            area: result.area,
+            priceRange: result.priceRange,
+            contactInfo: result.contactInfo,
+            details: result.details,
+            rawMessages: messages.map((m) => ({
+              id: m.id,
+              content: m.content,
+              senderName: m.senderName,
+            })),
+            sourceMessageIds: messageIds,
+          },
+        });
+        logger.info(
+          `[property-debounce] ✅ Created PropertyRequest ${request.id}: ${result.requestType} ${result.propertyType} @ ${result.location}`,
+        );
+      }
 
       // Emit socket event for real-time UI update
       if (ioRef) {

@@ -19,7 +19,7 @@ function getClient(): OpenAI {
 }
 
 const SYSTEM_PROMPT = `Bạn là AI phân tích tin nhắn bất động sản trong nhóm Zalo.
-Phân tích các tin nhắn sau và xác định có phải yêu cầu mua/bán/cho thuê/tìm thuê BĐS không.
+Phân tích các tin nhắn và xác định có phải yêu cầu mua/bán/cho thuê/tìm thuê BĐS không.
 
 Trả về **CHỈ JSON** (không markdown, không comment):
 {
@@ -30,13 +30,17 @@ Trả về **CHỈ JSON** (không markdown, không comment):
   "area": "diện tích nếu có" hoặc null,
   "priceRange": "khoảng giá nếu có" hoặc null,
   "contactInfo": "SĐT/tên liên hệ nếu ghi trong tin" hoặc null,
-  "details": "tóm tắt ngắn gọn yêu cầu (1-2 câu)"
+  "details": "tóm tắt ngắn gọn yêu cầu (1-2 câu)",
+  "isNewIntent": true/false
 }
 
 Quy tắc:
-- isRealEstate = true CHỈ khi tin nhắn có Ý ĐỊNH RÕ RÀNG mua/bán/thuê BĐS
-- Tin chào hỏi, hỏi chung chung, spam, quảng cáo không liên quan → isRealEstate = false
-- Trích xuất tối đa thông tin từ nội dung tin nhắn
+- isRealEstate = true CHỈ khi TIN NHẮN MỚI có Ý ĐỊNH RÕ RÀNG mua/bán/thuê BĐS
+- Phần [NGỮ CẢNH CŨ] chỉ để tham khảo, KHÔNG phân tích lại
+- Kết hợp thông tin từ ngữ cảnh cũ + tin mới để trích xuất đầy đủ hơn (ví dụ: ngữ cảnh cũ nói "nhà Q7", tin mới nói "3 tỷ" → kết hợp thành "nhà Q7, 3 tỷ")
+- isNewIntent = true nếu đây là yêu cầu BĐS MỚI (không trùng với ngữ cảnh cũ)
+- isNewIntent = false nếu tin mới chỉ bổ sung thông tin cho yêu cầu đã có trong ngữ cảnh
+- Tin chào hỏi, hỏi chung chung, spam, quảng cáo → isRealEstate = false
 - Nếu không chắc chắn → isRealEstate = false`;
 
 export interface PropertyDetectResult {
@@ -48,29 +52,44 @@ export interface PropertyDetectResult {
   priceRange: string | null;
   contactInfo: string | null;
   details: string;
+  isNewIntent: boolean; // true = yêu cầu mới, false = bổ sung cho yêu cầu cũ
 }
 
 /**
  * Analyze a batch of messages (1-3) from one sender to detect real-estate intent.
+ * Optional contextMessages provide previous conversation for richer understanding.
  */
 export async function detectPropertyRequest(
   messages: { senderName: string; content: string }[],
+  contextMessages?: { senderName: string; content: string }[],
 ): Promise<PropertyDetectResult> {
+  // Format new messages
   const formatted = messages
     .map((m) => `[${m.senderName}]: ${m.content}`)
     .join('\n');
 
-  logger.info(`[property-detect] Analyzing ${messages.length} messages for BĐS`);
+  // Format context (if any)
+  let userContent = '';
+  if (contextMessages && contextMessages.length > 0) {
+    const contextFormatted = contextMessages
+      .map((m) => `[${m.senderName}]: ${m.content}`)
+      .join('\n');
+    userContent = `[NGỮ CẢNH CŨ - chỉ tham khảo]:\n${contextFormatted}\n\n[TIN NHẮN MỚI - cần phân tích]:\n${formatted}`;
+  } else {
+    userContent = `Tin nhắn:\n${formatted}`;
+  }
+
+  logger.info(`[property-detect] Analyzing ${messages.length} messages (+${contextMessages?.length || 0} context) for BĐS`);
 
   try {
     const response = await getClient().chat.completions.create({
       model: config.openaiModel,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: `Tin nhắn:\n${formatted}` },
+        { role: 'user', content: userContent },
       ],
       temperature: 0.1,
-      max_tokens: 300,
+      max_tokens: 400,
       response_format: { type: 'json_object' },
     });
 
@@ -78,7 +97,7 @@ export async function detectPropertyRequest(
     const parsed = JSON.parse(raw) as PropertyDetectResult;
 
     logger.info(
-      `[property-detect] Result: isRealEstate=${parsed.isRealEstate}, type=${parsed.requestType}`,
+      `[property-detect] Result: isRealEstate=${parsed.isRealEstate}, type=${parsed.requestType}, isNewIntent=${parsed.isNewIntent}`,
     );
 
     return {
@@ -90,6 +109,7 @@ export async function detectPropertyRequest(
       priceRange: parsed.priceRange ?? null,
       contactInfo: parsed.contactInfo ?? null,
       details: parsed.details ?? '',
+      isNewIntent: parsed.isNewIntent ?? true,
     };
   } catch (err) {
     logger.error('[property-detect] AI analysis failed:', err);
@@ -102,6 +122,7 @@ export async function detectPropertyRequest(
       priceRange: null,
       contactInfo: null,
       details: '',
+      isNewIntent: true,
     };
   }
 }
