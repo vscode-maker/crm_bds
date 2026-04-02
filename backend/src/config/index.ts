@@ -14,4 +14,6 @@ export const config = {
   isProduction: process.env.NODE_ENV === 'production',
   openaiApiKey: process.env.OPENAI_API_KEY || '',
   openaiModel: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+  cancoApiUrl: process.env.CANCO_API_URL || '',
+  cancoApiKey: process.env.CANCO_API_KEY || '',
 };

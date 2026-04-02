@@ -12,6 +12,9 @@
 import { prisma } from '../../shared/database/prisma-client.js';
 import { logger } from '../../shared/utils/logger.js';
 import { detectPropertyRequest } from '../../shared/utils/property-detect-service.js';
+import { forwardToCanCo, type CanCoResult } from '../../shared/utils/canco-integration.js';
+import { zaloPool } from '../zalo/zalo-pool.js';
+import { config } from '../../config/index.js';
 import { randomUUID } from 'node:crypto';
 
 const DEBOUNCE_MS = 2 * 60 * 1000; // 2 minutes
@@ -264,6 +267,12 @@ async function runPropertyAnalysis(
           request,
         });
       }
+
+      // Forward to can-co social platform + send Zalo reply
+      sendToCanCoAndReply(
+        { id: request.id, senderUid, senderName, conversationId, orgId },
+        result,
+      );
     } else {
       logger.debug(`[property-debounce] Not a real-estate request from ${senderName}`);
     }
@@ -280,4 +289,88 @@ export function clearAllPropertyTimers(): void {
     clearTimeout(timer);
   }
   debounceTimers.clear();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Can-co Forward + Zalo Reply (fire-and-forget)
+// ═══════════════════════════════════════════════════════════════
+
+async function sendToCanCoAndReply(
+  requestData: { id: string; senderUid: string; senderName: string; conversationId: string; orgId: string },
+  detectResult: any,
+): Promise<void> {
+  try {
+    const cancoResult = await forwardToCanCo(requestData, detectResult);
+    if (!cancoResult) return;
+
+    // Build Zalo reply message
+    const replyMsg = buildReplyMessage(cancoResult, detectResult);
+
+    // Get conversation details to send reply
+    const conv = await prisma.conversation.findUnique({
+      where: { id: requestData.conversationId },
+      select: { zaloAccountId: true, externalThreadId: true, threadType: true },
+    });
+    if (!conv?.externalThreadId) return;
+
+    const instance = zaloPool.getInstance(conv.zaloAccountId);
+    if (!instance?.api) {
+      logger.warn('[property-debounce] Cannot send reply — Zalo account not connected');
+      return;
+    }
+
+    // Send Zalo message
+    const threadType = conv.threadType === 'group' ? 1 : 0;
+    await instance.api.sendMessage({ msg: replyMsg }, conv.externalThreadId, threadType);
+
+    // Save message to DB
+    await prisma.message.create({
+      data: {
+        id: randomUUID(),
+        conversationId: requestData.conversationId,
+        senderType: 'self',
+        senderUid: '',
+        senderName: 'CRM Bot',
+        content: replyMsg,
+        contentType: 'text',
+        sentAt: new Date(),
+      },
+    });
+
+    await prisma.conversation.update({
+      where: { id: requestData.conversationId },
+      data: { lastMessageAt: new Date() },
+    });
+
+    logger.info(
+      `[property-debounce] ✅ Sent Zalo reply for intent ${cancoResult.intentId}`,
+    );
+  } catch (err) {
+    logger.error('[property-debounce] sendToCanCoAndReply error:', err);
+  }
+}
+
+function buildReplyMessage(cancoResult: CanCoResult, detectResult: any): string {
+  const cancoBaseUrl = config.cancoApiUrl || 'https://can-co.vercel.app';
+  const intentUrl = `${cancoBaseUrl}/can-co/intent/${cancoResult.intentId}`;
+
+  const typeLabel = cancoResult.intentType === 'CAN' ? 'Cần tìm' : 'Đăng bán/cho thuê';
+
+  const parts = [
+    `🏠 Hệ thống đã ghi nhận yêu cầu BĐS của bạn!`,
+    ``,
+    `📋 Loại: ${typeLabel}`,
+  ];
+
+  if (detectResult.location) parts.push(`📍 Khu vực: ${detectResult.location}`);
+  if (detectResult.priceRange) parts.push(`💰 Giá: ${detectResult.priceRange}`);
+  if (detectResult.propertyType) parts.push(`🏗️ Loại BĐS: ${detectResult.propertyType}`);
+  if (detectResult.area) parts.push(`📐 Diện tích: ${detectResult.area}`);
+
+  parts.push(``);
+  parts.push(`👉 Theo dõi bài đăng: ${intentUrl}`);
+  parts.push(``);
+  parts.push(`Hệ thống sẽ tự động tìm kiếm và thông báo khi có tin phù hợp!`);
+
+  return parts.join('\n');
 }
