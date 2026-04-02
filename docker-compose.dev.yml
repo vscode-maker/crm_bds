@@ -37,9 +37,17 @@ services:
     container_name: zalo-crm-db-dev
     restart: unless-stopped
     environment:
+<<<<<<< Updated upstream
       POSTGRES_USER: ${DB_USER:-crmuser}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME:-zalocrm}
+=======
+      POSTGRES_USER: crmuser
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: zalocrm
+    ports:
+      - "5435:5432"
+>>>>>>> Stashed changes
     volumes:
       - pg_data:/var/lib/postgresql/data
     ports:

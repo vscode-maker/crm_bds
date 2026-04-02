@@ -21,8 +21,12 @@
       :loading="loadingMsgs"
       :sending="sendingMsg"
       @send="sendMessage"
-      @toggle-contact-panel="showContactPanel = !showContactPanel"
+      @toggle-contact-panel="toggleContactPanel"
+      @toggle-ai-panel="toggleAIPanel"
+      @toggle-property-panel="togglePropertyPanel"
       :show-contact-panel="showContactPanel"
+      :show-ai-panel="showAIPanel"
+      :show-property-panel="showPropertyPanel"
       style="flex: 1; min-width: 300px;"
     />
 
@@ -36,6 +40,24 @@
         @saved="fetchConversations()"
       />
     </div>
+
+    <!-- AI Summary panel -->
+    <div v-if="showAIPanel && selectedConv" class="chat-panel-right ai-panel-container" :style="{ width: rightWidth + 'px' }">
+      <div class="resize-handle resize-handle-left" @mousedown="startResize('right', $event)" />
+      <AISummaryPanel
+        :conversation-id="selectedConv.id"
+        @close="showAIPanel = false"
+      />
+    </div>
+
+    <!-- Property Request panel -->
+    <div v-if="showPropertyPanel && selectedConv" class="chat-panel-right" :style="{ width: rightWidth + 'px' }">
+      <div class="resize-handle resize-handle-left" @mousedown="startResize('right', $event)" />
+      <PropertyRequestPanel
+        :conversation-id="selectedConv.id"
+        @close="showPropertyPanel = false"
+      />
+    </div>
   </div>
 </template>
 
@@ -44,6 +66,8 @@ import { ref, onMounted, onUnmounted, watch } from 'vue';
 import ConversationList from '@/components/chat/ConversationList.vue';
 import MessageThread from '@/components/chat/MessageThread.vue';
 import ChatContactPanel from '@/components/chat/ChatContactPanel.vue';
+import AISummaryPanel from '@/components/chat/AISummaryPanel.vue';
+import PropertyRequestPanel from '@/components/chat/PropertyRequestPanel.vue';
 import { useChat } from '@/composables/use-chat';
 
 const {
@@ -59,6 +83,32 @@ function onFilterAccount(id: string | null) {
 }
 
 const showContactPanel = ref(false);
+const showAIPanel = ref(false);
+const showPropertyPanel = ref(false);
+
+function closeAllPanels() {
+  showContactPanel.value = false;
+  showAIPanel.value = false;
+  showPropertyPanel.value = false;
+}
+
+function toggleContactPanel() {
+  const wasOpen = showContactPanel.value;
+  closeAllPanels();
+  showContactPanel.value = !wasOpen;
+}
+
+function toggleAIPanel() {
+  const wasOpen = showAIPanel.value;
+  closeAllPanels();
+  showAIPanel.value = !wasOpen;
+}
+
+function togglePropertyPanel() {
+  const wasOpen = showPropertyPanel.value;
+  closeAllPanels();
+  showPropertyPanel.value = !wasOpen;
+}
 
 // Resizable panel widths (restored from localStorage)
 const leftWidth = ref(parseInt(localStorage.getItem('chat-left-width') || '320'));

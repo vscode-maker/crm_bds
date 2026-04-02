@@ -12,4 +12,6 @@ export const config = {
   uploadDir: process.env.UPLOAD_DIR || '/var/lib/zalo-crm/files',
   appUrl: process.env.APP_URL || 'http://localhost:3000',
   isProduction: process.env.NODE_ENV === 'production',
+  openaiApiKey: process.env.OPENAI_API_KEY || '',
+  openaiModel: process.env.OPENAI_MODEL || 'gpt-4o-mini',
 };

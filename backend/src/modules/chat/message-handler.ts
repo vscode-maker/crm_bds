@@ -6,6 +6,7 @@ import { prisma } from '../../shared/database/prisma-client.js';
 import { logger } from '../../shared/utils/logger.js';
 import { randomUUID } from 'node:crypto';
 import { emitWebhook } from '../api/webhook-service.js';
+import { triggerPropertyDetection } from './property-debounce.js';
 
 export interface IncomingMessage {
   accountId: string;
@@ -93,6 +94,11 @@ export async function handleIncomingMessage(
       contentType: msg.contentType,
       sentAt: message.sentAt,
     });
+
+    // Trigger BĐS property detection for group text messages (async, non-blocking)
+    if (msg.threadType === 'group' && msg.contentType === 'text' && !msg.isSelf) {
+      triggerPropertyDetection(conversation.id, msg.senderUid, msg.senderName).catch(() => {});
+    }
 
     return {
       message,

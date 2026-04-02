@@ -1,19 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
 :root {
-  --navy-deep: #0A192F;
-  --navy-light: #112240;
-  --cyan-electric: #00F2FF;
-  --card-glass: rgba(17, 34, 64, 0.7);
+  --zalo-blue: #0068FF;
+  --zalo-dark-blue: #004DCC;
+  --card-glass: rgba(30, 41, 59, 0.7); /* slate-800 focus */
   --liquid-ease: cubic-bezier(0.4, 0, 0.2, 1);
-  --border-glow: rgba(0, 242, 255, 0.1);
+  --border-glow: rgba(0, 104, 255, 0.2);
 }
 
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: 'Plus Jakarta Sans', 'Roboto', sans-serif;
+  font-family: 'Share Tech Mono', monospace;
   scroll-behavior: smooth;
 }
 
@@ -21,7 +20,6 @@ html, body {
   height: 100%;
 }
 
-/* Liquid animated background */
 @keyframes flow-bg {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -38,15 +36,11 @@ html, body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ❄️ Zalo Animated background */
 .liquid-bg {
-  background: linear-gradient(-45deg, #0A192F, #112240, #004d7a, #008fb3) !important;
+  background: linear-gradient(-45deg, #020617, #0f172a, #172554, #1e3a8a) !important;
   background-size: 400% 400% !important;
   animation: flow-bg 15s ease infinite;
-}
-
-.ai-core-orb {
-  animation: liquid-morph 8s infinite var(--liquid-ease);
-  box-shadow: 0 0 30px rgba(0, 242, 255, 0.2);
 }
 
 /* Glass card effect */
@@ -56,67 +50,66 @@ html, body {
   backdrop-filter: blur(12px);
 }
 
-/* In light theme, override glass effect */
 .v-theme--light .v-card {
   background: rgba(255, 255, 255, 0.95) !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(0, 104, 255, 0.08) !important;
   backdrop-filter: none;
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(0, 242, 255, 0.2); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(0, 242, 255, 0.4); }
+::-webkit-scrollbar-thumb { background: rgba(0, 104, 255, 0.3); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0, 104, 255, 0.5); }
 
-.v-theme--light ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); }
+.v-theme--light ::-webkit-scrollbar-thumb { background: rgba(0, 104, 255, 0.2); }
 
 /* Sidebar navigation */
 .v-navigation-drawer {
-  background: rgba(17, 34, 64, 0.5) !important;
+  background: rgba(15, 23, 42, 0.6) !important;
   backdrop-filter: blur(16px) !important;
   border-right: 1px solid var(--border-glow) !important;
 }
 
 .v-theme--light .v-navigation-drawer {
-  background: rgba(255, 255, 255, 0.9) !important;
-  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-right: 1px solid rgba(0, 104, 255, 0.08) !important;
 }
 
 /* App bar */
 .v-app-bar {
-  background: rgba(10, 25, 47, 0.6) !important;
+  background: rgba(2, 6, 23, 0.7) !important;
   backdrop-filter: blur(16px) !important;
   border-bottom: 1px solid var(--border-glow) !important;
 }
 
 .v-theme--light .v-app-bar {
-  background: rgba(255, 255, 255, 0.85) !important;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-bottom: 1px solid rgba(0, 104, 255, 0.08) !important;
 }
 
-/* List items hover - cyan glow */
+/* List items hover */
 .v-list-item:hover {
-  background: rgba(0, 242, 255, 0.05) !important;
+  background: rgba(0, 104, 255, 0.06) !important;
 }
 
 .v-list-item--active {
-  background: rgba(0, 242, 255, 0.08) !important;
-  border-left: 3px solid var(--cyan-electric);
+  background: rgba(0, 104, 255, 0.1) !important;
+  border-left: 3px solid var(--zalo-blue);
 }
 
 .v-theme--light .v-list-item:hover {
-  background: rgba(10, 25, 47, 0.04) !important;
+  background: rgba(0, 104, 255, 0.04) !important;
 }
 
-/* Input fields - pill/rounded style */
+/* Input fields */
 .v-field {
   border-radius: 16px !important;
 }
 
 .v-field--focused {
-  border-color: var(--cyan-electric) !important;
-  box-shadow: 0 0 12px rgba(0, 242, 255, 0.15);
+  border-color: var(--zalo-blue) !important;
+  box-shadow: 0 0 12px rgba(0, 104, 255, 0.15);
 }
 
 /* Chat bubbles */
@@ -125,89 +118,83 @@ html, body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Sent messages (self) - right aligned */
+/* Sent messages (self) */
 .message-bubble.bg-primary {
-  background: linear-gradient(135deg, #0077B6, #005f8a) !important;
+  background: linear-gradient(135deg, #0088FF, #0068FF) !important;
   color: #FFFFFF !important;
   border-radius: 24px 24px 4px 24px !important;
 }
 
 .v-theme--light .message-bubble.bg-primary {
-  background: linear-gradient(135deg, #0077B6, #005f8a) !important;
+  background: linear-gradient(135deg, #0088FF, #0068FF) !important;
   color: #FFFFFF !important;
 }
 
-/* Timestamp inside self bubble — high contrast */
 .msg-time-self {
   color: rgba(255, 255, 255, 0.65) !important;
 }
 
-/* Received messages - left aligned */
+/* Received messages */
 .message-bubble:not(.bg-primary) {
-  background: linear-gradient(135deg, rgba(0, 242, 255, 0.08), rgba(0, 242, 255, 0.03)) !important;
-  border: 1px solid rgba(0, 242, 255, 0.15) !important;
+  background: rgba(51, 65, 85, 0.5) !important; /* slate-700/50 */
+  border: 1px solid rgba(0, 104, 255, 0.2) !important;
   border-radius: 4px 24px 24px 24px !important;
-  color: #E6F1FF !important;
+  color: #F8FAFC !important;
 }
 
-/* Timestamp inside received bubble — high contrast */
 .msg-time-contact {
-  color: #6a7ea0 !important;
+  color: #94a3b8 !important; /* slate-400 */
 }
 
 .v-theme--light .message-bubble:not(.bg-primary) {
-  background: #EAECF0 !important;
-  border: 1px solid rgba(0, 0, 0, 0.06) !important;
-  color: #1a1a1a !important;
+  background: #F1F5F9 !important; /* slate-100 */
+  border: 1px solid rgba(0, 104, 255, 0.06) !important;
+  color: #0f172a !important; /* slate-900 */
 }
 
 .v-theme--light .msg-time-contact {
-  color: #666 !important;
+  color: #64748b !important; /* slate-500 */
 }
 
 .v-theme--light .msg-time-self {
   color: rgba(255, 255, 255, 0.75) !important;
 }
 
-/* Chat input area */
+/* Interfaces areas */
 .chat-input-area {
-  border-top: 1px solid var(--border-glow, rgba(0,242,255,0.1));
-  background: rgba(17, 34, 64, 0.5);
+  border-top: 1px solid var(--border-glow);
+  background: rgba(30, 41, 59, 0.5);
   backdrop-filter: blur(8px);
 }
 
 .v-theme--light .chat-input-area {
   background: rgba(255, 255, 255, 0.9) !important;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-top: 1px solid rgba(0, 104, 255, 0.08);
   backdrop-filter: none;
 }
 
-/* Chat messages area background */
 .chat-messages-area {
-  background: rgba(10, 25, 47, 0.3);
+  background: rgba(15, 23, 42, 0.3);
 }
 
 .v-theme--light .chat-messages-area {
-  background: #F5F7FA !important;
+  background: #F8FAFC !important;
 }
 
-/* Buttons */
 .v-btn--variant-flat {
   transition: all 0.3s var(--liquid-ease) !important;
 }
 
 .v-btn--variant-flat:hover {
-  box-shadow: 0 0 16px rgba(0, 242, 255, 0.2);
+  box-shadow: 0 0 16px rgba(0, 104, 255, 0.25);
   transform: translateY(-1px);
 }
 
-/* Chips */
 .v-chip {
   border-radius: 12px !important;
   font-weight: 500;
 }
 
-/* Data table */
 .v-data-table {
   background: transparent !important;
 }
@@ -220,100 +207,86 @@ html, body {
 
 .v-theme--light .v-data-table .v-table__wrapper {
   background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 104, 255, 0.08);
 }
 
-/* Dialog */
 .v-overlay__content > .v-card {
   backdrop-filter: blur(20px);
 }
 
-/* Tabs */
 .v-tab--selected {
-  color: var(--cyan-electric) !important;
+  color: var(--zalo-blue) !important;
 }
 
-/* Status dot animation */
 .status-dot {
-  box-shadow: 0 0 10px rgba(0, 242, 255, 0.8);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.8); /* emerald-500 */
 }
 
-/* Progress linear */
 .v-progress-linear {
-  background: rgba(0, 242, 255, 0.1) !important;
+  background: rgba(0, 104, 255, 0.1) !important;
 }
 
-/* Smooth transitions for everything */
 .v-card, .v-list-item, .v-btn, .v-chip, .v-tab {
   transition: all 0.3s var(--liquid-ease) !important;
 }
 
-/* Chat container borders */
 .chat-container > * {
   border-color: var(--border-glow);
 }
 
 .v-theme--light .chat-container > * {
-  border-color: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 104, 255, 0.08);
 }
 
-/* Conversation list active item */
 .conversation-active {
-  background: rgba(0, 242, 255, 0.05);
-  border: 1px solid rgba(0, 242, 255, 0.2) !important;
+  background: rgba(0, 104, 255, 0.06);
+  border: 1px solid rgba(0, 104, 255, 0.2) !important;
 }
 
 .v-theme--light .conversation-active {
-  background: rgba(0, 119, 182, 0.06);
-  border: 1px solid rgba(0, 119, 182, 0.2) !important;
+  background: rgba(0, 104, 255, 0.06);
+  border: 1px solid rgba(0, 104, 255, 0.15) !important;
 }
 
-/* Conversation list sidebar */
 .conversation-list {
-  background: rgba(17, 34, 64, 0.3);
+  background: rgba(15, 23, 42, 0.3);
 }
 
 .v-theme--light .conversation-list {
   background: #FFFFFF !important;
 }
 
-/* Chat header area */
 .chat-header {
   border-bottom: 1px solid var(--border-glow);
-  background: rgba(17, 34, 64, 0.3);
+  background: rgba(15, 23, 42, 0.3);
 }
 
 .v-theme--light .chat-header {
   background: #FFFFFF !important;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(0, 104, 255, 0.08);
 }
 
-/* Light mode text contrast fixes */
 .v-theme--light .text-grey {
-  color: #666 !important;
+  color: #64748b !important;
 }
 
 .v-theme--light .v-list-item-subtitle {
-  color: #555 !important;
+  color: #475569 !important;
 }
 
-/* Ensure dialog cards have proper bg in light mode */
 .v-theme--light .v-overlay__content > .v-card {
   background: #FFFFFF !important;
   backdrop-filter: none;
 }
 
-/* Light mode tabs */
 .v-theme--light .v-tab--selected {
-  color: #0077B6 !important;
+  color: #0068FF !important;
 }
 
-/* Alert styling */
 .v-alert {
   border-radius: 16px !important;
 }
 
-/* Empty state text */
 .v-theme--light .text-grey-lighten-2 {
-  color: #bbb !important;
+  color: #cbd5e1 !important;
 }

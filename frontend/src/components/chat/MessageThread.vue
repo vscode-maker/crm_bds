@@ -21,6 +21,29 @@
           <div class="text-caption text-grey">{{ conversation.zaloAccount?.displayName || 'Zalo' }}</div>
         </div>
         <v-btn
+          icon="mdi-creation"
+          size="small" variant="text"
+          :color="showAiPanel ? 'purple-lighten-2' : undefined"
+          @click="$emit('toggle-ai-panel')"
+          title="AI Tóm tắt hội thoại"
+        />
+        <v-btn
+          v-if="conversation.threadType === 'group'"
+          icon="mdi-home-search"
+          size="small" variant="text"
+          :color="conversation.autoDetectEnabled ? 'green' : undefined"
+          @click="toggleAutoDetect"
+          title="Auto-detect BĐS"
+        />
+        <v-btn
+          v-if="conversation.threadType === 'group'"
+          icon="mdi-home-city"
+          size="small" variant="text"
+          :color="showPropertyPanel ? 'orange' : undefined"
+          @click="$emit('toggle-property-panel')"
+          title="Yêu cầu BĐS"
+        />
+        <v-btn
           :icon="showContactPanel ? 'mdi-account-details' : 'mdi-account-details-outline'"
           size="small" variant="text"
           :color="showContactPanel ? 'primary' : undefined"
@@ -118,15 +141,41 @@ const props = defineProps<{
   loading: boolean;
   sending: boolean;
   showContactPanel?: boolean;
+  showAiPanel?: boolean;
+  showPropertyPanel?: boolean;
 }>();
 
-const emit = defineEmits<{ send: [content: string]; 'toggle-contact-panel': [] }>();
+const emit = defineEmits<{
+  send: [content: string];
+  'toggle-contact-panel': [];
+  'toggle-ai-panel': [];
+  'toggle-property-panel': [];
+  'auto-detect-toggled': [enabled: boolean];
+}>();
 
 const inputText = ref('');
 const messagesContainer = ref<HTMLElement | null>(null);
 const previewImageUrl = ref('');
 const showImagePreview = computed({ get: () => !!previewImageUrl.value, set: (v) => { if (!v) previewImageUrl.value = ''; } });
 const syncSnack = ref({ show: false, text: '', color: 'success' });
+
+async function toggleAutoDetect() {
+  if (!props.conversation) return;
+  try {
+    const { data } = await api.patch(`/conversations/${props.conversation.id}/auto-detect`);
+    if (props.conversation) {
+      props.conversation.autoDetectEnabled = data.autoDetectEnabled;
+    }
+    emit('auto-detect-toggled', data.autoDetectEnabled);
+    syncSnack.value = {
+      show: true,
+      text: data.autoDetectEnabled ? 'Auto-detect BĐS đã bật' : 'Auto-detect BĐS đã tắt',
+      color: data.autoDetectEnabled ? 'success' : 'info',
+    };
+  } catch {
+    syncSnack.value = { show: true, text: 'Lỗi toggle auto-detect', color: 'error' };
+  }
+}
 
 function handleSend() { if (!inputText.value.trim()) return; emit('send', inputText.value); inputText.value = ''; }
 function formatMessageTime(d: string) { return new Date(d).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }); }

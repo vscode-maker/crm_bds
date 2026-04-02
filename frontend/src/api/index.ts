@@ -21,8 +21,9 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      // Only redirect if not already on login page to avoid infinite loops
-      if (!window.location.pathname.includes('/login')) {
+      const currentPath = window.location.pathname;
+      // Don't redirect if already on login/setup — prevents infinite reload loop
+      if (!currentPath.includes('/login') && !currentPath.includes('/setup')) {
         router.push('/login');
       }
     }
@@ -31,3 +32,4 @@ api.interceptors.response.use(
 );
 
 export { api };
+

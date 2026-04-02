@@ -14,21 +14,28 @@
           </v-chip>
         </template>
         <template #item.actions="{ item }">
-          <v-btn v-if="authStore.isAdmin" icon size="small" color="cyan" title="Phân quyền truy cập" @click="openAccess(item)">
-            <v-icon>mdi-shield-account</v-icon>
-          </v-btn>
-          <v-btn icon size="small" color="success" @click="syncContacts(item.id)" title="Đồng bộ danh bạ Zalo" :loading="syncing === item.id">
-            <v-icon>mdi-account-sync</v-icon>
-          </v-btn>
-          <v-btn v-if="item.liveStatus !== 'connected'" icon size="small" color="primary" @click="loginAccount(item.id)" title="Đăng nhập QR">
-            <v-icon>mdi-qrcode</v-icon>
-          </v-btn>
-          <v-btn v-if="item.liveStatus === 'disconnected' && item.sessionData" icon size="small" color="info" @click="reconnectAccount(item.id)" title="Kết nối lại">
-            <v-icon>mdi-refresh</v-icon>
-          </v-btn>
-          <v-btn icon size="small" color="error" @click="confirmDelete(item)" title="Xóa">
-            <v-icon>mdi-delete</v-icon>
-          </v-btn>
+          <div class="d-flex justify-end align-center">
+            <v-btn v-if="item.liveStatus !== 'connected'" variant="tonal" size="small" color="primary" class="mr-2 rounded-pill text-none font-weight-bold" @click="loginAccount(item.id)">
+              <v-icon start size="16">mdi-qrcode</v-icon> Đăng nhập
+            </v-btn>
+            <v-btn v-else-if="item.liveStatus === 'disconnected' && item.sessionData" variant="tonal" size="small" color="info" class="mr-2 rounded-pill text-none font-weight-bold" @click="reconnectAccount(item.id)">
+              <v-icon start size="16">mdi-refresh</v-icon> Kết nối lại
+            </v-btn>
+
+            <v-menu location="start" offset="5">
+              <template #activator="{ props }">
+                <v-btn v-bind="props" icon variant="text" size="small" color="grey">
+                  <v-icon>mdi-dots-vertical</v-icon>
+                </v-btn>
+              </template>
+              <v-list density="compact" min-width="180" elevation="6" rounded="xl" class="py-1">
+                <v-list-item v-if="authStore.isAdmin" prepend-icon="mdi-shield-account-outline" title="Phân quyền" @click="openAccess(item)" />
+                <v-list-item prepend-icon="mdi-account-sync-outline" title="Đồng bộ danh bạ" @click="syncContacts(item.id)" :disabled="syncing === item.id" />
+                <v-divider class="my-1" />
+                <v-list-item prepend-icon="mdi-trash-can-outline" title="Xóa tài khoản" @click="confirmDelete(item)" color="error" class="text-error" />
+              </v-list>
+            </v-menu>
+          </div>
         </template>
       </v-data-table>
     </v-card>

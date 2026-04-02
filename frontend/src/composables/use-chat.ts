@@ -24,6 +24,7 @@ export interface Conversation {
   lastMessageAt: string | null;
   unreadCount: number;
   isReplied: boolean;
+  autoDetectEnabled?: boolean;
   messages?: ConversationMessage[];
 }
 

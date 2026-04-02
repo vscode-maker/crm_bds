@@ -22,6 +22,7 @@ model Organization {
   activityLogs  ActivityLog[]
   dailyStats    DailyMessageStat[]
   settings      AppSetting[]
+  propertyRequests PropertyRequest[]
 
   @@map("organizations")
 }
@@ -142,12 +143,16 @@ model Conversation {
   lastMessageAt    DateTime? @map("last_message_at")
   unreadCount      Int       @default(0) @map("unread_count")
   isReplied        Boolean   @default(true) @map("is_replied")
+  aiSummary        String?   @db.Text @map("ai_summary")
+  aiSummaryUpdatedAt DateTime? @map("ai_summary_updated_at")
+  autoDetectEnabled Boolean   @default(false) @map("auto_detect_enabled")
   createdAt        DateTime  @default(now()) @map("created_at")
 
   org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   zaloAccount ZaloAccount  @relation(fields: [zaloAccountId], references: [id], onDelete: Cascade)
   contact     Contact?     @relation(fields: [contactId], references: [id])
   messages    Message[]
+  propertyRequests PropertyRequest[]
 
   @@unique([zaloAccountId, externalThreadId])
   @@map("conversations")
@@ -168,6 +173,7 @@ model Message {
   deletedAt       DateTime? @map("deleted_at")
   sentAt          DateTime  @map("sent_at")
   repliedByUserId String?   @map("replied_by_user_id")
+  aiProcessed     Boolean   @default(false) @map("ai_processed")
   createdAt       DateTime  @default(now()) @map("created_at")
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -248,4 +254,33 @@ model AppSetting {
 
   @@unique([orgId, settingKey])
   @@map("app_settings")
+}
+
+// Detected real-estate request from chat messages
+model PropertyRequest {
+  id              String    @id @default(uuid())
+  orgId           String    @map("org_id")
+  conversationId  String    @map("conversation_id")
+  senderUid       String    @map("sender_uid")
+  senderName      String?   @map("sender_name")
+  requestType     String?   @map("request_type")
+  propertyType    String?   @map("property_type")
+  location        String?
+  area            String?
+  priceRange      String?   @map("price_range")
+  contactInfo     String?   @map("contact_info")
+  details         String?   @db.Text
+  rawMessages     Json      @default("[]") @map("raw_messages")
+  status          String    @default("pending")
+  reviewedBy      String?   @map("reviewed_by")
+  reviewedAt      DateTime? @map("reviewed_at")
+  notes           String?
+  sourceMessageIds Json     @default("[]") @map("source_message_ids")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  org          Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("property_requests")
 }
